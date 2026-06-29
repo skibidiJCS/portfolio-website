@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jiacai Song | Animation Preview</title>
+    <link rel="stylesheet" href="animation-preview.css" />
+  </head>
+  <body>
+    <header class="preview-intro">
+      <p>Animation preview</p>
+      <h1>Three ways to add depth.</h1>
+      <span>Scroll to test each concept.</span>
+    </header>
+
+    <main>
+      <section class="depth-demo demo" data-demo="depth">
+        <div class="demo-label"><span>01</span> Photo depth</div>
+        <div class="depth-stage">
+          <div class="depth-plane" aria-hidden="true"></div>
+          <div class="depth-photo">
+            <img src="assets/hero-mountain.jpeg" alt="Jiacai standing on a mountain" />
+          </div>
+          <div class="depth-copy">
+            <p>Scroll-linked parallax</p>
+            <h2>The landscape moves at a different speed from the frame.</h2>
+          </div>
+        </div>
+      </section>
+
+      <section class="curtain-demo demo" data-demo="curtain">
+        <div class="curtain-sticky">
+          <article class="curtain-panel curtain-dark">
+            <span>02 / Section curtain</span>
+            <h2>CHESS</h2>
+          </article>
+          <article class="curtain-panel curtain-lime">
+            <span>Next chapter</span>
+            <h2>BUILD</h2>
+            <p>The next section physically covers the previous chapter while scrolling.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="signature-demo demo" data-demo="signature">
+        <div class="signature-inner">
+          <p>03 / Page-end signature</p>
+          <div class="signature" aria-label="JCS">JCS</div>
+          <a href="mailto:jiacai.song.qc@gmail.com">jiacai.song.qc@gmail.com</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="animation-preview.js"></script>
+  </body>
+</html>

@@ -1,0 +1,201 @@
+:root {
+  --lime: #bfff00;
+  --ink: #f3f3eb;
+  --muted: #bac1b3;
+  --card-width: min(78vw, 330px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: #111;
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+main {
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  padding-block: clamp(30px, 7svh, 72px);
+}
+
+.preview-heading {
+  width: min(calc(100% - 40px), 1120px);
+  margin: 0 auto 18px;
+}
+
+.preview-heading p {
+  margin: 0 0 8px;
+  color: var(--lime);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.preview-heading h1 {
+  max-width: 780px;
+  margin: 0;
+  font-size: clamp(2.8rem, 12vw, 7rem);
+  line-height: 0.88;
+  letter-spacing: 0;
+}
+
+.drag-viewport {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-block: 30px 34px;
+  cursor: grab;
+  touch-action: none;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+}
+
+.drag-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.drag-viewport.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.drag-viewport.is-animating {
+  scroll-snap-type: none;
+}
+
+.drag-track {
+  display: flex;
+  width: max-content;
+  gap: clamp(14px, 3vw, 24px);
+  padding-inline: calc((100vw - var(--card-width)) / 2);
+}
+
+.drag-card {
+  --distance: 0;
+  --abs-distance: 0;
+  --velocity-lean: 0deg;
+  position: relative;
+  flex: 0 0 var(--card-width);
+  height: min(61svh, 540px);
+  min-height: 430px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: #20221f;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.42);
+  scroll-snap-align: center;
+  transform:
+    translate3d(0, calc(var(--abs-distance) * 18px), 0)
+    rotate(calc(var(--distance) * -4deg + var(--velocity-lean)))
+    scale(calc(1 - var(--abs-distance) * 0.065));
+  transition: filter 260ms ease, box-shadow 420ms ease;
+  will-change: transform;
+}
+
+.drag-card::after {
+  content: "";
+  position: absolute;
+  inset: 38% 0 0;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.94));
+  pointer-events: none;
+}
+
+.drag-card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  pointer-events: none;
+  transform: scale(calc(1.04 + var(--abs-distance) * 0.025));
+  transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drag-card-cube img {
+  object-fit: contain;
+  padding: 9%;
+  background: #efbd8b;
+}
+
+.card-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 24px;
+}
+
+.card-copy span {
+  color: var(--lime);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.card-copy h2 {
+  margin: 8px 0 8px;
+  font-size: clamp(1.7rem, 7.5vw, 2.35rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.card-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.snap-dots {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+}
+
+.snap-dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(243, 243, 235, 0.28);
+  cursor: pointer;
+  transition: width 300ms cubic-bezier(0.16, 1, 0.3, 1), background 300ms ease;
+}
+
+.snap-dots button.active {
+  width: 30px;
+  border-radius: 5px;
+  background: var(--lime);
+}
+
+@media (min-width: 760px) {
+  :root {
+    --card-width: min(42vw, 410px);
+  }
+
+  .drag-card {
+    height: min(64svh, 590px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drag-card,
+  .drag-card img,
+  .snap-dots button {
+    transition: none;
+  }
+}

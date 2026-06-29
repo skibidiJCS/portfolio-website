@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mobile Project Cards Preview</title>
+    <link rel="stylesheet" href="mobile-project-preview.css" />
+  </head>
+  <body>
+    <main>
+      <header class="preview-heading">
+        <p>Beyond chess</p>
+        <h1>Projects in motion.</h1>
+      </header>
+
+      <section class="drag-viewport" aria-label="Project carousel">
+        <div class="drag-track">
+          <article class="drag-card">
+            <img src="assets/dragon-boat.jpg" alt="Dragon boat competition" draggable="false" />
+            <div class="card-copy">
+              <span>Dragon Boat</span>
+              <h2>Montreal competitions</h2>
+              <p>Finished 2nd and 3rd in competitions.</p>
+            </div>
+          </article>
+
+          <article class="drag-card">
+            <img src="assets/optimath-finalist.jpg" alt="Optimath finalist certificate" draggable="false" />
+            <div class="card-copy">
+              <span>Mathematics</span>
+              <h2>Math contest finalist</h2>
+              <p>AQJM finalist from 2023 to 2025 and Optimath finalist in 2025.</p>
+            </div>
+          </article>
+
+          <article class="drag-card">
+            <img src="assets/marihacks-ix-gemma.jpg" alt="MariHacks IX winners" draggable="false" />
+            <div class="card-copy">
+              <span>Hackathon</span>
+              <h2>MariHacks IX</h2>
+              <p>Winner: Best Use of Google Gemma.</p>
+            </div>
+          </article>
+
+          <article class="drag-card">
+            <img src="assets/expo-sciences.jpg" alt="Expo-sciences project" draggable="false" />
+            <div class="card-copy">
+              <span>Science</span>
+              <h2>Expo-sciences</h2>
+              <p>Design, prototyping, testing, and presenting a technical solution.</p>
+            </div>
+          </article>
+
+          <article class="drag-card drag-card-cube">
+            <img src="assets/speedcubing-cube.png" alt="Illustrated Rubik's Cube" draggable="false" />
+            <div class="card-copy">
+              <span>Logic</span>
+              <h2>Speedcubing</h2>
+              <p>Pattern recognition and fast decision-making.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <nav class="snap-dots" aria-label="Choose a project"></nav>
+    </main>
+    <script src="mobile-project-preview.js"></script>
+  </body>
+</html>

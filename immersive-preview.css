@@ -1,0 +1,273 @@
+:root {
+  --paper: #efeee6;
+  --ink: #20251d;
+  --dark: #111111;
+  --lime: #c6ff00;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.preview-section {
+  position: relative;
+}
+
+.preview-heading {
+  position: absolute;
+  z-index: 5;
+  top: clamp(28px, 6vh, 72px);
+  left: clamp(22px, 6vw, 96px);
+}
+
+.preview-heading span {
+  color: #6a8f00;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.preview-heading h1,
+.preview-heading h2 {
+  max-width: 760px;
+  margin: 8px 0 0;
+  font-size: clamp(3rem, 7vw, 7.5rem);
+  line-height: 0.88;
+  letter-spacing: 0;
+}
+
+.cloud-study {
+  min-height: 180svh;
+}
+
+.cloud-stage,
+.project-stage {
+  position: sticky;
+  top: 0;
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+.mountain-frame {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: min(82vw, 1180px);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #8dc9e7;
+  box-shadow: 0 34px 100px rgba(32, 37, 29, 0.2);
+  transform: translate(-50%, -50%) rotate(calc(-2deg + var(--cloud-progress, 0) * 2deg));
+}
+
+.mountain-layer {
+  position: absolute;
+  inset: 0;
+  background-image: url("assets/hero-mountain.jpeg");
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+}
+
+.mountain-sky {
+  clip-path: inset(0 0 43% 0);
+  transform: translate3d(calc(var(--cloud-progress, 0) * 3.2%), 0, 0) scale(1.05);
+}
+
+.mountain-land {
+  clip-path: inset(52% 0 0 0);
+  transform: translate3d(0, calc(var(--cloud-progress, 0) * -2.2%), 0) scale(1.03);
+}
+
+.project-depth {
+  min-height: 185svh;
+  background: var(--dark);
+}
+
+.dark-heading {
+  color: #f6f4eb;
+}
+
+.depth-stack {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.depth-card {
+  position: absolute;
+  width: min(40vw, 540px);
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  background: #222;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.38);
+  will-change: transform;
+}
+
+.depth-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.depth-card > div {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 26px;
+  color: white;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+}
+
+.depth-card span {
+  display: block;
+  color: var(--lime);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.depth-card strong {
+  display: block;
+  margin-top: 5px;
+  font-size: clamp(1.6rem, 3vw, 3.3rem);
+  line-height: 0.95;
+}
+
+.depth-card-one {
+  transform: translate3d(calc(-25vw + var(--depth-progress, 0) * 8vw), calc(7vh - var(--depth-progress, 0) * 9vh), 0) rotate(-7deg);
+}
+
+.depth-card-two {
+  z-index: 2;
+  transform: translate3d(0, calc(13vh - var(--depth-progress, 0) * 18vh), 0) scale(calc(0.92 + var(--depth-progress, 0) * 0.08));
+}
+
+.depth-card-three {
+  transform: translate3d(calc(25vw - var(--depth-progress, 0) * 8vw), calc(6vh - var(--depth-progress, 0) * 5vh), 0) rotate(7deg);
+}
+
+.counter-study {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 170px clamp(20px, 6vw, 90px) 80px;
+}
+
+.counter-inner {
+  width: min(1280px, 100%);
+}
+
+.counter-study .preview-heading {
+  position: static;
+  margin-bottom: clamp(48px, 8vw, 100px);
+}
+
+.counter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.counter-card {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(24px, 4vw, 50px);
+  border: 1px solid rgba(32, 37, 29, 0.14);
+  border-radius: 22px;
+  overflow: hidden;
+  background: rgba(255, 255, 247, 0.65);
+}
+
+.counter-card p {
+  margin: 0;
+  color: #6a8f00;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.counter-year {
+  display: flex;
+  gap: 0.015em;
+  height: 0.85em;
+  overflow: hidden;
+  font-size: clamp(4.5rem, 8vw, 9rem);
+  font-weight: 950;
+  line-height: 0.85;
+}
+
+.digit-reel {
+  display: block;
+  height: 0.85em;
+  overflow: hidden;
+}
+
+.digit-track {
+  display: flex;
+  flex-direction: column;
+  transform: translateY(0);
+  transition: transform 1100ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--digit-delay, 0ms);
+}
+
+.digit-track i {
+  height: 0.85em;
+  color: var(--ink);
+  font-style: normal;
+  line-height: 0.85;
+}
+
+.counter-study.counter-visible .digit-track {
+  transform: translateY(var(--digit-shift, 0em));
+}
+
+@media (max-width: 720px) {
+  .mountain-frame {
+    top: 56%;
+    width: 92vw;
+    border-radius: 20px;
+  }
+
+  .depth-card {
+    width: min(70vw, 360px);
+  }
+
+  .depth-card-one {
+    transform: translate3d(-16vw, calc(9vh - var(--depth-progress, 0) * 7vh), 0) rotate(-6deg);
+  }
+
+  .depth-card-three {
+    transform: translate3d(16vw, calc(7vh - var(--depth-progress, 0) * 5vh), 0) rotate(6deg);
+  }
+
+  .counter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .counter-card {
+    min-height: 220px;
+  }
+
+  .counter-year {
+    font-size: clamp(4.6rem, 22vw, 7rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .digit-track {
+    transition-duration: 1ms;
+  }
+}
