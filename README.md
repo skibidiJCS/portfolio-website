@@ -1,4 +1,4 @@
-# Jiacai Song Online CV
+# Jiacai Song portfolio
 
 This is a static personal website. You can open `index.html` directly, or run a local server from this folder.
 
