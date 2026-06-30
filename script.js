@@ -25,6 +25,10 @@ const monogramSources = {
 let heroLetterStarts = null;
 let heroLetterStartWidth = 0;
 const chapters = document.querySelectorAll(".chapter");
+const hasNativeChapterTimeline = Boolean(
+  window.CSS?.supports?.("animation-timeline: view()") &&
+  window.CSS?.supports?.("view-timeline-name: --chapter-motion")
+);
 const chapterTravel = new WeakMap();
 const signatureSection = document.querySelector(".signature-section");
 const signatureGraphic = document.querySelector(".jcs-signature");
@@ -121,6 +125,33 @@ const updateViewportWidth = () => {
   document.documentElement.style.setProperty("--viewport-width", `${document.documentElement.clientWidth}px`);
 };
 
+const updateMobileHeroLayout = () => {
+  if (!heroStage) return;
+
+  const isPortraitMobile = window.innerWidth <= 860 && window.innerHeight > 560;
+  if (!isPortraitMobile) {
+    heroStage.style.removeProperty("--hero-photo-size");
+    heroStage.style.removeProperty("--hero-photo-half-height");
+    heroStage.style.removeProperty("--hero-square-size");
+    heroStage.style.removeProperty("--hero-square-half");
+    return;
+  }
+
+  const heroContent = heroStage.querySelector(".hero-content");
+  if (!heroContent) return;
+
+  const contentBottom = heroContent.offsetTop + heroContent.offsetHeight;
+  const availableHeight = Math.max(88, heroStage.clientHeight - contentBottom - 44);
+  const photoWidth = Math.min(window.innerWidth * 0.82, 390, availableHeight * 1.08);
+  const photoHeight = photoWidth / 1.08;
+  const squareWidth = Math.min(window.innerWidth * 0.92, 430, photoWidth * 1.12);
+
+  heroStage.style.setProperty("--hero-photo-size", `${photoWidth.toFixed(2)}px`);
+  heroStage.style.setProperty("--hero-photo-half-height", `${(photoHeight / 2).toFixed(2)}px`);
+  heroStage.style.setProperty("--hero-square-size", `${squareWidth.toFixed(2)}px`);
+  heroStage.style.setProperty("--hero-square-half", `${(squareWidth / 2).toFixed(2)}px`);
+};
+
 const updateChapterTravel = () => {
   const viewportWidth = document.documentElement.clientWidth;
   const isMobile = viewportWidth < 700;
@@ -129,9 +160,11 @@ const updateChapterTravel = () => {
   chapters.forEach((chapter) => {
     const word = chapter.querySelector("b");
     const wordWidth = word?.getBoundingClientRect().width || 0;
-    const overflow = isMobile ? Math.max(0, wordWidth - viewportWidth + 36) : 0;
-    const overflowTravel = Math.min(viewportWidth * 0.22, overflow * 0.5);
-    const travel = baseTravel + overflowTravel;
+    const revealClearance = isMobile
+      ? Math.max(0, (wordWidth - viewportWidth) * 0.5 + 24)
+      : 0;
+    const visibilityMultiplier = chapter.classList.contains("chapter-education") ? 2.7 : 1;
+    const travel = Math.max(baseTravel, revealClearance * visibilityMultiplier);
     chapterTravel.set(chapter, travel);
     chapter.style.setProperty("--chapter-travel", `${travel.toFixed(2)}px`);
   });
@@ -520,6 +553,8 @@ const updateHeroTransition = () => {
 };
 
 const updateChapterProgress = () => {
+  if (hasNativeChapterTimeline) return;
+
   chapters.forEach((chapter) => {
     const maxShift = chapterTravel.get(chapter) || window.innerWidth * 0.22;
     const rect = chapter.getBoundingClientRect();
@@ -616,9 +651,6 @@ let layerMotionFrame = 0;
 let layerMotionTime = 0;
 let layerHoverFrame = 0;
 let pendingLayerPointer = null;
-let lastLayerPointerX = Number.NaN;
-let lastLayerPointerTime = 0;
-let layerPointerVelocity = 0;
 const usesCoarseLayerPointer = () => window.matchMedia("(hover: none), (pointer: coarse)").matches;
 const mobileProjectMedia = window.matchMedia("(max-width: 860px)");
 const isMobileProjectMode = () => mobileProjectMedia.matches;
@@ -697,8 +729,6 @@ const animateLayerMotion = (time) => {
     moving = springLayerValue(state, "x", "velocityX", "targetX", 260 * response, 30 * responseRoot, 760, delta) || moving;
     moving = springLayerValue(state, "y", "velocityY", "targetY", 270 * response, 31 * responseRoot, 220, delta) || moving;
     moving = springLayerValue(state, "scale", "velocityScale", "targetScale", 300 * response, 35 * responseRoot, 1.2, delta) || moving;
-    const velocityLean = Math.max(-0.9, Math.min(0.9, state.velocityX * 0.003));
-    state.targetRotation = state.layoutRotation + velocityLean;
     moving = springLayerValue(state, "rotation", "velocityRotation", "targetRotation", 230 * response, 27 * responseRoot, 15, delta) || moving;
   });
 
@@ -733,9 +763,11 @@ const enableLayerPhysics = () => {
   applyLayerMotion();
 };
 
-const setActiveLayer = (index, { lift = true, impulse = 0 } = {}) => {
+const setActiveLayer = (index, { lift = true } = {}) => {
   if (!projectStack || !layerCards.length) return;
+  const previousActiveIndex = activeLayerIndex;
   activeLayerIndex = Math.min(layerCards.length - 1, Math.max(0, index));
+  const activeChanged = activeLayerIndex !== previousActiveIndex;
   layerIsLifted = lift;
   projectStack.classList.add("has-layer-focus");
   const coarsePointer = usesCoarseLayerPointer();
@@ -769,9 +801,11 @@ const setActiveLayer = (index, { lift = true, impulse = 0 } = {}) => {
     state.targetScale = state.layoutScale;
     state.targetRotation = state.layoutRotation;
 
-    if (impulse && projectStack.classList.contains("layers-physics")) {
-      const impulseWeight = isActive ? 0.022 : 0.004 / Math.max(1, distance);
-      state.velocityX += impulse * impulseWeight;
+    if (activeChanged && projectStack.classList.contains("layers-physics")) {
+      state.velocityX *= 0.22;
+      state.velocityY *= 0.22;
+      state.velocityScale *= 0.22;
+      state.velocityRotation *= 0.22;
     }
 
     if (reducedMotion && projectStack.classList.contains("layers-physics")) {
@@ -903,7 +937,7 @@ if (projectStack && layerCards.length) {
 
     const activeDistance = Math.abs(pointerRatio - positions[activeLayerIndex]);
     if (candidate !== activeLayerIndex && candidateDistance + 0.018 < activeDistance) {
-      setActiveLayer(candidate, { impulse: pendingLayerPointer.velocity });
+      setActiveLayer(candidate);
     } else if (candidate === activeLayerIndex && !layerIsLifted) {
       setActiveLayer(activeLayerIndex);
     }
@@ -919,18 +953,9 @@ if (projectStack && layerCards.length) {
 
   projectStack.addEventListener("pointermove", (event) => {
     if (usesCoarseLayerPointer() || isMobileProjectMode()) return;
-    const time = event.timeStamp || performance.now();
-    const elapsed = lastLayerPointerTime ? Math.max(8, time - lastLayerPointerTime) : 16;
-    const rawVelocity = Number.isNaN(lastLayerPointerX)
-      ? 0
-      : Math.max(-1800, Math.min(1800, ((event.clientX - lastLayerPointerX) / elapsed) * 1000));
-    layerPointerVelocity = layerPointerVelocity * 0.58 + rawVelocity * 0.42;
-    lastLayerPointerX = event.clientX;
-    lastLayerPointerTime = time;
     pendingLayerPointer = {
       x: event.clientX,
       y: event.clientY,
-      velocity: layerPointerVelocity,
     };
     if (!layerHoverFrame) layerHoverFrame = requestAnimationFrame(selectLayerFromPointer);
   }, { passive: true });
@@ -938,9 +963,6 @@ if (projectStack && layerCards.length) {
   projectStack.addEventListener("pointerleave", () => {
     if (usesCoarseLayerPointer() || isMobileProjectMode()) return;
     pendingLayerPointer = null;
-    lastLayerPointerX = Number.NaN;
-    lastLayerPointerTime = 0;
-    layerPointerVelocity = 0;
     if (layerHoverFrame) cancelAnimationFrame(layerHoverFrame);
     layerHoverFrame = 0;
     setActiveLayer(2, { lift: false });
@@ -949,38 +971,17 @@ if (projectStack && layerCards.length) {
 }
 
 let mobileProjectActiveIndex = 2;
-let mobileProjectDragging = false;
-let mobileProjectPointerId = null;
-let mobileProjectStartX = 0;
-let mobileProjectStartScroll = 0;
-let mobileProjectLastX = 0;
-let mobileProjectLastTime = 0;
-let mobileProjectVelocity = 0;
-let mobileProjectMoved = false;
-let suppressMobileProjectClick = false;
-let mobileProjectAnimationFrame = 0;
 let mobileProjectVisualFrame = 0;
 
 const clampValue = (value, min, max) => Math.min(max, Math.max(min, value));
 
-const mobileProjectTarget = (card) => (
-  card.offsetLeft - (projectStack.clientWidth - card.offsetWidth) / 2
+const mobileProjectMaxScroll = () => Math.max(0, projectStack.scrollWidth - projectStack.clientWidth);
+
+const mobileProjectTarget = (card) => clampValue(
+  card.offsetLeft - (projectStack.clientWidth - card.offsetWidth) / 2,
+  0,
+  mobileProjectMaxScroll()
 );
-
-const nearestMobileProject = (predictedScroll) => {
-  let nearest = 0;
-  let nearestDistance = Number.POSITIVE_INFINITY;
-
-  layerCards.forEach((card, index) => {
-    const distance = Math.abs(mobileProjectTarget(card) - predictedScroll);
-    if (distance < nearestDistance) {
-      nearest = index;
-      nearestDistance = distance;
-    }
-  });
-
-  return nearest;
-};
 
 const updateMobileProjectDots = (index) => {
   mobileProjectActiveIndex = index;
@@ -998,7 +999,6 @@ const updateMobileProjectVisuals = () => {
   if (!projectStack || !isMobileProjectMode()) return;
 
   const viewportCenter = projectStack.scrollLeft + projectStack.clientWidth / 2;
-  const lean = clampValue(mobileProjectVelocity * -0.018, -2.2, 2.2);
   let nearest = 0;
   let nearestDistance = Number.POSITIVE_INFINITY;
 
@@ -1008,7 +1008,7 @@ const updateMobileProjectVisuals = () => {
     const absoluteDistance = Math.abs(cardCenter - viewportCenter);
     card.style.setProperty("--mobile-distance", distance.toFixed(4));
     card.style.setProperty("--mobile-abs-distance", Math.abs(distance).toFixed(4));
-    card.style.setProperty("--mobile-lean", `${lean.toFixed(3)}deg`);
+    card.style.setProperty("--mobile-lean", "0deg");
 
     if (absoluteDistance < nearestDistance) {
       nearest = index;
@@ -1029,54 +1029,16 @@ const requestMobileProjectVisuals = () => {
   mobileProjectVisualFrame = requestAnimationFrame(updateMobileProjectVisuals);
 };
 
-const stopMobileProjectAnimation = () => {
-  if (mobileProjectAnimationFrame) cancelAnimationFrame(mobileProjectAnimationFrame);
-  mobileProjectAnimationFrame = 0;
-  projectStack?.classList.remove("mobile-project-animating");
-};
-
-const springMobileProjectTo = (index, releaseVelocity = 0) => {
+const scrollMobileProjectTo = (index, behavior = "smooth") => {
   if (!projectStack || !isMobileProjectMode()) return;
-  stopMobileProjectAnimation();
   const target = mobileProjectTarget(layerCards[index]);
-
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    projectStack.scrollLeft = target;
-    mobileProjectVelocity = 0;
-    updateMobileProjectDots(index);
-    requestMobileProjectVisuals();
-    return;
-  }
-
-  projectStack.classList.add("mobile-project-animating");
-  let position = projectStack.scrollLeft;
-  let velocity = clampValue(releaseVelocity, -2300, 2300);
-  let previousTime = performance.now();
-
-  const step = (time) => {
-    const delta = Math.min(0.032, Math.max(0.008, (time - previousTime) / 1000));
-    const acceleration = (target - position) * 170 - velocity * 24;
-    velocity += acceleration * delta;
-    position += velocity * delta;
-    projectStack.scrollLeft = position;
-    mobileProjectVelocity = velocity / 1000;
-    requestMobileProjectVisuals();
-    previousTime = time;
-
-    if (Math.abs(target - position) < 0.3 && Math.abs(velocity) < 8) {
-      projectStack.scrollLeft = target;
-      mobileProjectVelocity = 0;
-      mobileProjectAnimationFrame = 0;
-      projectStack.classList.remove("mobile-project-animating");
-      updateMobileProjectDots(index);
-      requestMobileProjectVisuals();
-      return;
-    }
-
-    mobileProjectAnimationFrame = requestAnimationFrame(step);
-  };
-
-  mobileProjectAnimationFrame = requestAnimationFrame(step);
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  projectStack.scrollTo({
+    left: target,
+    behavior: reducedMotion ? "auto" : behavior,
+  });
+  updateMobileProjectDots(index);
+  requestMobileProjectVisuals();
 };
 
 if (projectStack && layerCards.length && projectSnapDots) {
@@ -1084,65 +1046,19 @@ if (projectStack && layerCards.length && projectSnapDots) {
     const dot = document.createElement("button");
     dot.type = "button";
     dot.setAttribute("aria-label", `Show project ${index + 1}`);
-    dot.addEventListener("click", () => springMobileProjectTo(index));
+    dot.addEventListener("click", () => scrollMobileProjectTo(index));
     projectSnapDots.appendChild(dot);
   });
-
-  projectStack.addEventListener("pointerdown", (event) => {
-    if (!isMobileProjectMode() || event.button !== 0) return;
-    stopMobileProjectAnimation();
-    mobileProjectDragging = true;
-    mobileProjectPointerId = event.pointerId;
-    mobileProjectStartX = event.clientX;
-    mobileProjectStartScroll = projectStack.scrollLeft;
-    mobileProjectLastX = event.clientX;
-    mobileProjectLastTime = event.timeStamp || performance.now();
-    mobileProjectVelocity = 0;
-    mobileProjectMoved = false;
-    suppressMobileProjectClick = false;
-    projectStack.classList.add("mobile-project-dragging");
-    projectStack.setPointerCapture?.(event.pointerId);
-  });
-
-  projectStack.addEventListener("pointermove", (event) => {
-    if (!mobileProjectDragging || event.pointerId !== mobileProjectPointerId) return;
-    const time = event.timeStamp || performance.now();
-    const elapsed = Math.max(8, time - mobileProjectLastTime);
-    const displacement = mobileProjectStartX - event.clientX;
-    const pointerVelocity = (mobileProjectLastX - event.clientX) / elapsed;
-    mobileProjectVelocity = mobileProjectVelocity * 0.62 + pointerVelocity * 0.38;
-    mobileProjectMoved = mobileProjectMoved || Math.abs(displacement) > 7;
-    projectStack.scrollLeft = mobileProjectStartScroll + displacement;
-    mobileProjectLastX = event.clientX;
-    mobileProjectLastTime = time;
-    requestMobileProjectVisuals();
-  });
-
-  const releaseMobileProject = (event) => {
-    if (!mobileProjectDragging || event.pointerId !== mobileProjectPointerId) return;
-    mobileProjectDragging = false;
-    projectStack.classList.remove("mobile-project-dragging");
-    projectStack.releasePointerCapture?.(event.pointerId);
-    suppressMobileProjectClick = mobileProjectMoved;
-    const predicted = projectStack.scrollLeft + mobileProjectVelocity * 240;
-    const nextIndex = nearestMobileProject(predicted);
-    springMobileProjectTo(nextIndex, mobileProjectVelocity * 1000);
-    mobileProjectPointerId = null;
-  };
-
-  projectStack.addEventListener("pointerup", releaseMobileProject);
-  projectStack.addEventListener("pointercancel", releaseMobileProject);
   projectStack.addEventListener("scroll", requestMobileProjectVisuals, { passive: true });
 
   const configureMobileProjects = () => {
-    stopMobileProjectAnimation();
     if (isMobileProjectMode()) {
       projectStack.classList.add("mobile-project-carousel", "layers-staged", "layers-unfolded", "layers-ready");
-      requestAnimationFrame(() => springMobileProjectTo(mobileProjectActiveIndex));
+      requestAnimationFrame(() => scrollMobileProjectTo(mobileProjectActiveIndex, "auto"));
       return;
     }
 
-    projectStack.classList.remove("mobile-project-carousel", "mobile-project-dragging", "mobile-project-animating");
+    projectStack.classList.remove("mobile-project-carousel");
     projectStack.scrollLeft = 0;
     layerCards.forEach((card) => {
       card.style.removeProperty("--mobile-distance");
@@ -1189,12 +1105,7 @@ const closeDetail = () => {
 };
 
 detailCards.forEach((card) => {
-  card.addEventListener("click", (event) => {
-    if (isMobileProjectMode() && suppressMobileProjectClick) {
-      event.preventDefault();
-      suppressMobileProjectClick = false;
-      return;
-    }
+  card.addEventListener("click", () => {
     openDetail(card);
   });
   card.addEventListener("keydown", (event) => {
@@ -1224,10 +1135,11 @@ const requestScrollUpdate = () => {
 
 window.addEventListener("scroll", requestScrollUpdate, { passive: true });
 window.addEventListener("resize", () => {
+  updateMobileHeroLayout();
   updateChapterTravel();
   requestScrollUpdate();
   if (projectStack && isMobileProjectMode()) {
-    requestAnimationFrame(() => springMobileProjectTo(mobileProjectActiveIndex));
+    requestAnimationFrame(() => scrollMobileProjectTo(mobileProjectActiveIndex, "auto"));
   } else if (projectStack) {
     setActiveLayer(activeLayerIndex, { lift: layerIsLifted });
   }
@@ -1239,8 +1151,12 @@ window.addEventListener("resize", () => {
   }, 120);
 });
 highlightBlocks.forEach(splitHighlightLines);
+updateMobileHeroLayout();
 updateChapterTravel();
-document.fonts?.ready.then(updateChapterTravel);
+document.fonts?.ready.then(() => {
+  updateMobileHeroLayout();
+  updateChapterTravel();
+});
 updateScroll();
 
 let activeStoryWindow = null;

@@ -45,6 +45,7 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -1621,6 +1622,8 @@ body.theme-dark .education-mark {
   isolation: isolate;
   background: var(--chapter-bg);
   contain: paint;
+  view-timeline-name: --chapter-motion;
+  view-timeline-axis: block;
 }
 
 .chapter-education,
@@ -1694,6 +1697,55 @@ body.theme-dark .education-mark {
   transform: translate3d(var(--baton-shift, -140%), 0, 0) scaleX(var(--baton-scale, 0.6));
   transform-origin: center;
   will-change: transform, opacity;
+}
+
+@keyframes chapterTrack {
+  from {
+    transform: translate3d(calc(0px - var(--chapter-travel)), 0, 0);
+  }
+
+  to {
+    transform: translate3d(var(--chapter-travel), 0, 0);
+  }
+}
+
+@keyframes chapterBatonTrack {
+  0% {
+    opacity: 0;
+    transform: translate3d(-140%, 0, 0) scaleX(0.55);
+  }
+
+  16% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate3d(50vw, 0, 0) scaleX(1.45);
+  }
+
+  84% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(100vw + 140%), 0, 0) scaleX(0.55);
+  }
+}
+
+@supports (animation-timeline: view()) and (view-timeline-name: --chapter-motion) {
+  .chapter > span {
+    animation: chapterTrack 1ms linear both;
+    animation-timeline: --chapter-motion;
+    animation-range: entry 0% exit 100%;
+  }
+
+  .chapter-baton {
+    animation: chapterBatonTrack 1ms linear both;
+    animation-timeline: --chapter-motion;
+    animation-range: entry 0% exit 100%;
+  }
 }
 
 @media (max-width: 700px) {
@@ -2053,6 +2105,10 @@ body.theme-dark .education-mark {
   }
 
   .hero-stage {
+    --hero-photo-size: min(82vw, 390px, 38svh);
+    --hero-photo-half-height: min(38vw, 181px, 17.6svh);
+    --hero-square-size: min(92vw, 430px, 40svh);
+    --hero-square-half: min(46vw, 215px, 20svh);
     min-height: 100svh;
     justify-content: flex-start;
     padding-top: 86px;
@@ -2061,15 +2117,15 @@ body.theme-dark .education-mark {
 
   .hero-stage::before {
     right: -18px;
-    top: 70%;
-    width: min(92vw, 430px);
+    top: calc(100% - 16px - var(--hero-square-half));
+    width: var(--hero-square-size);
     border-radius: 26px;
   }
 
   .hero-photo {
     right: 18px;
-    top: 70%;
-    width: min(82vw, 390px);
+    top: calc(100% - 24px - var(--hero-photo-half-height));
+    width: var(--hero-photo-size);
     border-radius: 24px;
   }
 
@@ -2377,7 +2433,7 @@ body.theme-dark .education-mark {
   width: var(--viewport-width);
   min-height: clamp(590px, 78svh, 780px);
   margin-left: calc(50% - (var(--viewport-width) / 2));
-  overflow: clip;
+  overflow: visible;
   isolation: isolate;
   perspective: 1400px;
   touch-action: pan-y;
@@ -2559,29 +2615,30 @@ body.theme-dark .education-mark {
   }
 
   .project-stack {
+    --mobile-card-width: min(78vw, 330px);
+    --mobile-card-gutter: max(18px, calc((var(--viewport-width) - var(--mobile-card-width)) / 2));
     display: flex;
     align-items: center;
     width: var(--viewport-width);
     min-height: 0;
     gap: 16px;
     margin-left: calc(50% - (var(--viewport-width) / 2));
-    padding: 30px calc((100vw - min(78vw, 330px)) / 2) 48px;
+    padding: 30px var(--mobile-card-gutter) 48px;
     overflow-x: auto;
     overflow-y: hidden;
     perspective: none;
-    touch-action: pan-y;
+    touch-action: pan-x pan-y;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--mobile-card-gutter);
     scrollbar-width: none;
     overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .project-stack::-webkit-scrollbar {
     display: none;
-  }
-
-  .project-stack.mobile-project-dragging,
-  .project-stack.mobile-project-animating {
-    scroll-snap-type: none;
   }
 
   .projects .layer-card {
@@ -2591,8 +2648,8 @@ body.theme-dark .education-mark {
     position: relative;
     left: auto;
     top: auto;
-    flex: 0 0 min(78vw, 330px);
-    width: min(78vw, 330px);
+    flex: 0 0 var(--mobile-card-width);
+    width: var(--mobile-card-width);
     opacity: 1 !important;
     z-index: auto !important;
     filter:
@@ -2679,7 +2736,7 @@ body.theme-dark .education-mark {
     width: 48%;
   }
 
-  .volunteer-media img {
+.volunteer-media img {
     width: 52%;
     height: 72%;
   }
@@ -2687,4 +2744,51 @@ body.theme-dark .education-mark {
   .volunteer-copy {
     padding: 22px;
   }
+}
+
+@media (max-width: 860px) and (max-height: 560px) {
+  .hero-stage {
+    --hero-photo-size: min(38vw, 46svh);
+    --hero-photo-half-height: min(17.6vw, 21.3svh);
+    --hero-square-size: min(43vw, 50svh);
+    --hero-square-half: min(21.5vw, 25svh);
+    padding-top: 48px;
+  }
+
+  .hero-content {
+    width: 52%;
+    margin-left: 0;
+  }
+
+  .hero-stage::before {
+    right: 12px;
+  }
+
+  .hero-photo {
+    right: 24px;
+  }
+
+  .hero h1 {
+    font-size: clamp(3.4rem, 9vw, 4.6rem);
+  }
+
+  .hero-copy {
+    max-width: 100%;
+    margin-top: 14px;
+    font-size: 0.9rem;
+  }
+}
+
+.volunteer-marathon .volunteer-media {
+  background: transparent;
+}
+
+.volunteer-marathon .volunteer-media::before {
+  display: none;
+}
+
+.volunteer-marathon .volunteer-media img,
+.volunteer-marathon:hover .volunteer-media img,
+.volunteer-item.volunteer-marathon:nth-child(even):hover .volunteer-media img {
+  filter: none;
 }

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 248" role="img" aria-labelledby="title">
+  <title id="title">MUHC hospital volunteering</title>
+  <path d="M18 34Q112 8 206 34v54c0 68-35 121-94 150C53 209 18 156 18 88Z" fill="#fff" stroke="#e73330" stroke-width="2"/>
+  <path d="M19 34Q112 9 205 34v43Q112 94 19 77Z" fill="#e73330"/>
+  <path d="M19 77q93 17 186 0v12Q112 106 19 89Z" fill="#fff"/>
+  <path d="M19 91q93 17 186 0v12q-93 18-186 0Z" fill="#e73330"/>
+  <circle cx="112" cy="61" r="18" fill="#2b4592" stroke="#fff" stroke-width="4"/>
+  <path d="M112 79c-28 0-47 22-47 54 0 23 8 44 22 59v22h19v-77c0-14 10-25 23-25 4 0 8 1 12 3-7-22-17-36-29-36Z" fill="#2b4592"/>
+  <circle cx="112" cy="96" r="22" fill="#fff"/>
+  <circle cx="112" cy="126" r="17" fill="#2b4592"/>
+  <path d="M112 141c-14 0-25 11-25 25v48h50v-48c0-14-11-25-25-25Z" fill="#2b4592"/>
+</svg>
