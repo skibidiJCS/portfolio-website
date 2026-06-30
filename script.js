@@ -25,6 +25,17 @@ const monogramSources = {
 let heroLetterStarts = null;
 let heroLetterStartWidth = 0;
 const chapters = document.querySelectorAll(".chapter");
+const timelineSection = document.querySelector(".milestones");
+const timelineStage = document.querySelector(".timeline-stage");
+const timelineViewport = document.querySelector(".timeline-viewport");
+const timelineRail = document.querySelector(".timeline-rail");
+const timelineYears = Array.from(document.querySelectorAll(".timeline-year"));
+let timelineHorizontalTravel = 0;
+let timelineStageHeight = 0;
+let timelineLastProgress = -1;
+let timelineLastIndex = -1;
+let storyMetrics = null;
+let viewportWidth = 0;
 const hasNativeChapterTimeline = Boolean(
   window.CSS?.supports?.("animation-timeline: view()") &&
   window.CSS?.supports?.("view-timeline-name: --chapter-motion")
@@ -122,7 +133,10 @@ let highlightResizeTimer = null;
 const jcsScrollStart = 0.018;
 
 const updateViewportWidth = () => {
-  document.documentElement.style.setProperty("--viewport-width", `${document.documentElement.clientWidth}px`);
+  const nextWidth = document.documentElement.clientWidth;
+  if (nextWidth === viewportWidth) return;
+  viewportWidth = nextWidth;
+  document.documentElement.style.setProperty("--viewport-width", `${nextWidth}px`);
 };
 
 const updateMobileHeroLayout = () => {
@@ -170,6 +184,62 @@ const updateChapterTravel = () => {
   });
 };
 
+const updateTimelineMetrics = () => {
+  if (!timelineSection || !timelineStage || !timelineViewport || !timelineRail) return;
+
+  timelineHorizontalTravel = Math.max(0, timelineRail.scrollWidth - timelineViewport.clientWidth);
+  timelineStageHeight = timelineStage.clientHeight || window.innerHeight;
+  timelineSection.style.height = `${Math.ceil(timelineStageHeight + timelineHorizontalTravel)}px`;
+  timelineSection.style.setProperty("--timeline-horizontal-travel", `${timelineHorizontalTravel.toFixed(2)}px`);
+  timelineLastProgress = -1;
+  timelineLastIndex = -1;
+};
+
+const updateTimelineProgress = () => {
+  if (!timelineSection || !timelineStage || !timelineViewport || !timelineRail || !timelineYears.length) return;
+
+  const rect = timelineSection.getBoundingClientRect();
+  const stageHeight = timelineStageHeight || timelineStage.clientHeight || window.innerHeight;
+  const verticalTravel = Math.max(1, rect.height - stageHeight);
+  const progress = Math.min(1, Math.max(0, -rect.top / verticalTravel));
+
+  if (Math.abs(progress - timelineLastProgress) > 0.0001) {
+    timelineSection.style.setProperty("--timeline-progress", progress.toFixed(4));
+    timelineSection.style.setProperty("--timeline-shift", `${(-timelineHorizontalTravel * progress).toFixed(2)}px`);
+    timelineLastProgress = progress;
+  }
+
+  if (rect.bottom <= 0 || rect.top >= stageHeight) {
+    if (timelineLastIndex !== -1) {
+      timelineYears.forEach((year) => year.classList.remove("is-current"));
+      timelineLastIndex = -1;
+    }
+    return;
+  }
+
+  const panelStep = timelineYears.length > 1 ? timelineHorizontalTravel / (timelineYears.length - 1) : 0;
+  const currentIndex = panelStep > 0
+    ? Math.min(timelineYears.length - 1, Math.max(0, Math.round((timelineHorizontalTravel * progress) / panelStep)))
+    : 0;
+  if (currentIndex === timelineLastIndex) return;
+  timelineYears.forEach((year, index) => year.classList.toggle("is-current", index === currentIndex));
+  timelineLastIndex = currentIndex;
+};
+
+const updateStoryMetrics = () => {
+  if (!scrollStory || !storyTrack || !storySlides.length) return;
+  const firstSlide = storySlides[0];
+  const lastSlide = storySlides[storySlides.length - 1];
+  const scrollRect = scrollStory.getBoundingClientRect();
+  const paddingLeft = Number.parseFloat(getComputedStyle(scrollStory).paddingLeft || "0");
+  const viewportCenter = document.documentElement.clientWidth / 2;
+  const trackBaseLeft = scrollRect.left + paddingLeft;
+  storyMetrics = {
+    startShift: viewportCenter - trackBaseLeft - (firstSlide.offsetLeft + firstSlide.offsetWidth / 2),
+    endShift: viewportCenter - trackBaseLeft - (lastSlide.offsetLeft + lastSlide.offsetWidth / 2),
+  };
+};
+
 window.setTimeout(() => {
   document.body.classList.remove("intro-lock");
   updateScroll();
@@ -197,6 +267,7 @@ const updateScroll = () => {
   }
   updateHeroTransition();
   updateChapterProgress();
+  updateTimelineProgress();
   updateStoryTrack();
   updateTheme();
   updateHighlights();
@@ -409,17 +480,9 @@ const updateStoryTrack = () => {
   const travel = Math.max(1, rect.height - window.innerHeight);
   const raw = -rect.top / travel;
   const progress = Math.min(1, Math.max(0, raw));
-  const easedProgress = progress * progress * (3 - 2 * progress);
-  const firstSlide = storySlides[0];
-  const lastSlide = storySlides[storySlides.length - 1];
-  const storyStyle = getComputedStyle(scrollStory);
-  const trackBaseLeft = rect.left + parseFloat(storyStyle.paddingLeft || "0");
-  const firstCenter = firstSlide.offsetLeft + firstSlide.offsetWidth / 2;
-  const lastCenter = lastSlide.offsetLeft + lastSlide.offsetWidth / 2;
-  const viewportCenter = document.documentElement.clientWidth / 2;
-  const startShift = viewportCenter - trackBaseLeft - firstCenter;
-  const endShift = viewportCenter - trackBaseLeft - lastCenter;
-  const shift = startShift + (endShift - startShift) * easedProgress;
+  if (!storyMetrics) updateStoryMetrics();
+  if (!storyMetrics) return;
+  const shift = storyMetrics.startShift + (storyMetrics.endShift - storyMetrics.startShift) * progress;
   storyTrack.style.transform = `translate3d(${shift}px, 0, 0)`;
 
   const index = Math.min(storySlides.length - 1, Math.max(0, Math.round(progress * (storySlides.length - 1))));
@@ -433,6 +496,7 @@ const sectionTheme = (section) => {
   if (section.classList.contains("chapter-build")) return "light";
   if (section.classList.contains("chapter")) return "dark";
   if (section.classList.contains("education")) return "final";
+  if (section.classList.contains("milestones")) return "final";
   if (section.classList.contains("closing")) return "final";
   if (section.classList.contains("signature-section")) return "final";
   if (section.classList.contains("profile")) return "light";
@@ -1135,8 +1199,11 @@ const requestScrollUpdate = () => {
 
 window.addEventListener("scroll", requestScrollUpdate, { passive: true });
 window.addEventListener("resize", () => {
+  updateViewportWidth();
   updateMobileHeroLayout();
   updateChapterTravel();
+  updateTimelineMetrics();
+  updateStoryMetrics();
   requestScrollUpdate();
   if (projectStack && isMobileProjectMode()) {
     requestAnimationFrame(() => scrollMobileProjectTo(mobileProjectActiveIndex, "auto"));
@@ -1151,11 +1218,16 @@ window.addEventListener("resize", () => {
   }, 120);
 });
 highlightBlocks.forEach(splitHighlightLines);
+updateViewportWidth();
 updateMobileHeroLayout();
 updateChapterTravel();
+updateTimelineMetrics();
+updateStoryMetrics();
 document.fonts?.ready.then(() => {
   updateMobileHeroLayout();
   updateChapterTravel();
+  updateTimelineMetrics();
+  updateStoryMetrics();
 });
 updateScroll();
 
