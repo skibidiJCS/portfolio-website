@@ -34,8 +34,15 @@ let timelineHorizontalTravel = 0;
 let timelineStageHeight = 0;
 let timelineLastProgress = -1;
 let timelineLastIndex = -1;
+let timelineTargetProgress = 0;
+let timelineRenderedProgress = 0;
+let timelineMotionFrame = 0;
+let timelineVisible = false;
 let storyMetrics = null;
 let viewportWidth = 0;
+let heroTransitionComplete = false;
+const mobileTimelineQuery = window.matchMedia("(max-width: 860px)");
+const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 const hasNativeChapterTimeline = Boolean(
   window.CSS?.supports?.("animation-timeline: view()") &&
   window.CSS?.supports?.("view-timeline-name: --chapter-motion")
@@ -141,29 +148,10 @@ const updateViewportWidth = () => {
 
 const updateMobileHeroLayout = () => {
   if (!heroStage) return;
-
-  const isPortraitMobile = window.innerWidth <= 860 && window.innerHeight > 560;
-  if (!isPortraitMobile) {
-    heroStage.style.removeProperty("--hero-photo-size");
-    heroStage.style.removeProperty("--hero-photo-half-height");
-    heroStage.style.removeProperty("--hero-square-size");
-    heroStage.style.removeProperty("--hero-square-half");
-    return;
-  }
-
-  const heroContent = heroStage.querySelector(".hero-content");
-  if (!heroContent) return;
-
-  const contentBottom = heroContent.offsetTop + heroContent.offsetHeight;
-  const availableHeight = Math.max(88, heroStage.clientHeight - contentBottom - 44);
-  const photoWidth = Math.min(window.innerWidth * 0.82, 390, availableHeight * 1.08);
-  const photoHeight = photoWidth / 1.08;
-  const squareWidth = Math.min(window.innerWidth * 0.92, 430, photoWidth * 1.12);
-
-  heroStage.style.setProperty("--hero-photo-size", `${photoWidth.toFixed(2)}px`);
-  heroStage.style.setProperty("--hero-photo-half-height", `${(photoHeight / 2).toFixed(2)}px`);
-  heroStage.style.setProperty("--hero-square-size", `${squareWidth.toFixed(2)}px`);
-  heroStage.style.setProperty("--hero-square-half", `${(squareWidth / 2).toFixed(2)}px`);
+  heroStage.style.removeProperty("--hero-photo-size");
+  heroStage.style.removeProperty("--hero-photo-half-height");
+  heroStage.style.removeProperty("--hero-square-size");
+  heroStage.style.removeProperty("--hero-square-half");
 };
 
 const updateChapterTravel = () => {
@@ -187,29 +175,25 @@ const updateChapterTravel = () => {
 const updateTimelineMetrics = () => {
   if (!timelineSection || !timelineStage || !timelineViewport || !timelineRail) return;
 
+  if (timelineMotionFrame) cancelAnimationFrame(timelineMotionFrame);
+  timelineMotionFrame = 0;
   timelineHorizontalTravel = Math.max(0, timelineRail.scrollWidth - timelineViewport.clientWidth);
   timelineStageHeight = timelineStage.clientHeight || window.innerHeight;
   timelineSection.style.height = `${Math.ceil(timelineStageHeight + timelineHorizontalTravel)}px`;
   timelineSection.style.setProperty("--timeline-horizontal-travel", `${timelineHorizontalTravel.toFixed(2)}px`);
   timelineLastProgress = -1;
   timelineLastIndex = -1;
+  timelineTargetProgress = timelineRenderedProgress;
 };
 
-const updateTimelineProgress = () => {
-  if (!timelineSection || !timelineStage || !timelineViewport || !timelineRail || !timelineYears.length) return;
-
-  const rect = timelineSection.getBoundingClientRect();
-  const stageHeight = timelineStageHeight || timelineStage.clientHeight || window.innerHeight;
-  const verticalTravel = Math.max(1, rect.height - stageHeight);
-  const progress = Math.min(1, Math.max(0, -rect.top / verticalTravel));
-
+const renderTimelineProgress = (progress) => {
   if (Math.abs(progress - timelineLastProgress) > 0.0001) {
     timelineSection.style.setProperty("--timeline-progress", progress.toFixed(4));
     timelineSection.style.setProperty("--timeline-shift", `${(-timelineHorizontalTravel * progress).toFixed(2)}px`);
     timelineLastProgress = progress;
   }
 
-  if (rect.bottom <= 0 || rect.top >= stageHeight) {
+  if (!timelineVisible) {
     if (timelineLastIndex !== -1) {
       timelineYears.forEach((year) => year.classList.remove("is-current"));
       timelineLastIndex = -1;
@@ -224,6 +208,42 @@ const updateTimelineProgress = () => {
   if (currentIndex === timelineLastIndex) return;
   timelineYears.forEach((year, index) => year.classList.toggle("is-current", index === currentIndex));
   timelineLastIndex = currentIndex;
+};
+
+const animateTimelineProgress = () => {
+  timelineMotionFrame = 0;
+  const delta = timelineTargetProgress - timelineRenderedProgress;
+  if (Math.abs(delta) < 0.00025) {
+    timelineRenderedProgress = timelineTargetProgress;
+    renderTimelineProgress(timelineRenderedProgress);
+    return;
+  }
+
+  const followStrength = 0.22 + Math.min(0.16, Math.abs(delta) * 0.45);
+  timelineRenderedProgress += delta * followStrength;
+  renderTimelineProgress(timelineRenderedProgress);
+  timelineMotionFrame = requestAnimationFrame(animateTimelineProgress);
+};
+
+const updateTimelineProgress = () => {
+  if (!timelineSection || !timelineStage || !timelineViewport || !timelineRail || !timelineYears.length) return;
+
+  const rect = timelineSection.getBoundingClientRect();
+  const stageHeight = timelineStageHeight || timelineStage.clientHeight || window.innerHeight;
+  const verticalTravel = Math.max(1, rect.height - stageHeight);
+  const progress = Math.min(1, Math.max(0, -rect.top / verticalTravel));
+  timelineVisible = rect.bottom > 0 && rect.top < stageHeight;
+  timelineTargetProgress = progress;
+
+  if (!mobileTimelineQuery.matches || reducedMotionQuery.matches) {
+    if (timelineMotionFrame) cancelAnimationFrame(timelineMotionFrame);
+    timelineMotionFrame = 0;
+    timelineRenderedProgress = progress;
+    renderTimelineProgress(progress);
+    return;
+  }
+
+  if (!timelineMotionFrame) timelineMotionFrame = requestAnimationFrame(animateTimelineProgress);
 };
 
 const updateStoryMetrics = () => {
@@ -472,7 +492,7 @@ const activateStorySlide = (slide) => {
 const updateStoryTrack = () => {
   if (!scrollStory || !storyTrack || !storySlides.length) return;
   if (window.matchMedia("(max-width: 860px)").matches) {
-    storyTrack.style.transform = "";
+    if (storyTrack.style.transform) storyTrack.style.transform = "";
     return;
   }
 
@@ -551,6 +571,8 @@ const getMonogramTargets = (letters, fontSize) => {
 const updateHeroTransition = () => {
   if (!hero) return;
   const rect = hero.getBoundingClientRect();
+  if (heroTransitionComplete && rect.bottom <= 0) return;
+  if (rect.bottom > 0) heroTransitionComplete = false;
   const travel = Math.max(1, hero.offsetHeight - window.innerHeight);
   const raw = -rect.top / (travel + window.innerHeight * 0.5);
   const progress = Math.min(1, Math.max(0, raw));
@@ -614,6 +636,8 @@ const updateHeroTransition = () => {
       letter.style.setProperty("--jcs-s-stroke", `${sStrokeWidth.toFixed(2)}px`);
     }
   });
+
+  if (progress >= 0.999 && rect.bottom <= 0) heroTransitionComplete = true;
 };
 
 const updateChapterProgress = () => {
@@ -1199,6 +1223,7 @@ const requestScrollUpdate = () => {
 
 window.addEventListener("scroll", requestScrollUpdate, { passive: true });
 window.addEventListener("resize", () => {
+  heroTransitionComplete = false;
   updateViewportWidth();
   updateMobileHeroLayout();
   updateChapterTravel();

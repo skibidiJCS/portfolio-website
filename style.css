@@ -207,6 +207,10 @@ img {
 }
 
 .hero-stage {
+  --hero-photo-width: min(40vw, 590px, 60vh);
+  --hero-square-width: min(50vw, 720px, 70vh);
+  --hero-side-margin: max(24px, calc((100vw - var(--max)) / 2));
+  --hero-content-gap: clamp(36px, 5vw, 72px);
   position: sticky;
   top: 0;
   min-height: 100svh;
@@ -221,9 +225,9 @@ img {
 .hero-stage::before {
   content: "";
   position: absolute;
-  right: calc(max(72px, calc((100vw - var(--max)) / 2 - 150px)) - ((min(55vw, 790px) - min(43vw, 610px)) / 2) + 15px);
+  right: calc(var(--hero-side-margin) - ((var(--hero-square-width) - var(--hero-photo-width)) / 2));
   top: 45%;
-  width: min(55vw, 790px);
+  width: var(--hero-square-width);
   aspect-ratio: 1;
   background: linear-gradient(135deg, #c8ff00, #a7ff00);
   clip-path: polygon(10% 0, 100% 8%, 88% 88%, 0 100%);
@@ -242,10 +246,10 @@ img {
 
 .hero-photo {
   position: absolute;
-  right: max(72px, calc((100vw - var(--max)) / 2 - 150px));
+  right: var(--hero-side-margin);
   top: 45%;
   z-index: 1;
-  width: min(43vw, 610px);
+  width: var(--hero-photo-width);
   aspect-ratio: 1.08;
   overflow: hidden;
   border-radius: 32px;
@@ -277,6 +281,19 @@ img {
   will-change: transform;
 }
 
+.hero-photo-frame {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.hero-photo-backdrop {
+  display: none;
+}
+
 .hero-content,
 .section-grid,
 .achievements {
@@ -287,6 +304,8 @@ img {
 .hero-content {
   position: relative;
   z-index: 2;
+  padding-right: calc(var(--hero-photo-width) + var(--hero-content-gap));
+  container-type: inline-size;
   will-change: transform, opacity;
 }
 
@@ -441,6 +460,18 @@ h1 {
   line-height: 0.82;
   letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 100%;
+  font-size: clamp(4.25rem, min(12vw, 24vh), 12.5rem);
+  font-size: clamp(4.25rem, min(31cqi, 24vh), 12.5rem);
+}
+
+.hero-name-first,
+.hero-name-last {
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 h1 span {
@@ -1264,9 +1295,11 @@ body.theme-dark .education-mark {
 .timeline-stage {
   position: sticky;
   top: 0;
+  z-index: 1;
   width: 100%;
   height: 100svh;
   overflow: hidden;
+  background: var(--page-final);
 }
 
 .timeline-intro {
@@ -1756,14 +1789,19 @@ body.theme-dark .education-mark {
 }
 
 .site-footer {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  bottom: clamp(20px, 3vh, 36px);
+  z-index: 2;
   display: grid;
   justify-items: center;
   gap: 12px;
-  padding: 24px 24px 32px;
+  width: 100%;
+  padding: 0 24px;
   text-align: center;
   font-size: 0.82rem;
   color: var(--muted);
+  transform: translateX(-50%);
 }
 
 .footer-socials {
@@ -1941,24 +1979,26 @@ body.theme-dark .education-mark {
 
 .signature-section {
   position: relative;
-  min-height: 104svh;
+  min-height: 100svh;
+  padding: 0;
   background: var(--page-final);
 }
 
 .signature-stage {
-  position: sticky;
-  top: 0;
-  min-height: 100svh;
+  position: absolute;
+  inset: 0;
+  min-height: 0;
   display: grid;
-  place-content: start center;
+  place-content: center;
   justify-items: center;
-  padding: clamp(34px, 7vh, 72px) 20px 30px;
-  overflow: hidden;
+  width: 100%;
+  padding: 0;
+  overflow: visible;
 }
 
 .jcs-signature {
   display: block;
-  width: min(82vw, 780px);
+  width: min(82vw, 780px, calc((100svh - 150px) * 1.5833));
   margin-inline: auto;
   overflow: visible;
   opacity: 0;
@@ -2204,6 +2244,20 @@ body.theme-dark .education-mark {
   }
 }
 
+@keyframes heroPhotoInMobile {
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-2deg);
+  }
+}
+
+@keyframes heroSquareInMobile {
+  to {
+    opacity: 0.34;
+    transform: scale(1) rotate(-10deg);
+  }
+}
+
 @keyframes heroItemDrop {
   from {
     opacity: 0;
@@ -2283,31 +2337,51 @@ body.theme-dark .education-mark {
   }
 
   .hero-stage {
-    --hero-photo-size: min(82vw, 390px, 38svh);
-    --hero-photo-half-height: min(38vw, 181px, 17.6svh);
-    --hero-square-size: min(92vw, 430px, 40svh);
-    --hero-square-half: min(46vw, 215px, 20svh);
+    --hero-photo-width: min(74vw, 340px, 32svh);
+    --hero-square-width: min(86vw, 390px, 38svh);
     min-height: 100svh;
     justify-content: flex-start;
-    padding-top: 86px;
-    padding-inline: 18px;
+    gap: 0;
+    padding: clamp(64px, 9svh, 86px) 18px 20px;
   }
 
   .hero-stage::before {
-    right: -18px;
-    top: calc(100% - 16px - var(--hero-square-half));
-    width: var(--hero-square-size);
-    border-radius: 26px;
+    display: none;
   }
 
   .hero-photo {
-    right: 18px;
-    top: calc(100% - 24px - var(--hero-photo-half-height));
-    width: var(--hero-photo-size);
+    position: relative;
+    right: auto;
+    top: auto;
+    order: 2;
+    flex: 0 0 auto;
+    align-self: flex-end;
+    width: var(--hero-photo-width);
+    margin-top: clamp(24px, 4svh, 38px);
+    overflow: visible;
     border-radius: 24px;
+    transform: scale(0.96) rotate(-2deg);
+    animation-name: heroPhotoInMobile;
+  }
+
+  .hero-photo-backdrop {
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: -5%;
+    z-index: 0;
+    width: min(122%, var(--hero-square-width));
+    aspect-ratio: 1;
+    border-radius: 26px;
+    background: linear-gradient(135deg, #c8ff00, #a7ff00);
+    clip-path: polygon(10% 0, 100% 8%, 88% 88%, 0 100%);
+    opacity: 0.46;
+    pointer-events: none;
+    transform: translateY(-50%) rotate(-8deg);
   }
 
   .hero-photo img {
+    border-radius: inherit;
     transform: translate3d(
         calc(var(--hero-depth, 0) * -1.8%),
         calc(var(--hero-depth, 0) * 2.4%),
@@ -2318,23 +2392,26 @@ body.theme-dark .education-mark {
 
   .hero.scrolling .hero-photo {
     border-radius: calc(24px - var(--hero-ease) * 8px);
-    transform: translateY(calc(-50% - var(--hero-ease) * 2vh)) scale(calc(1 + var(--hero-ease) * 0.34)) rotate(calc(-2deg + var(--hero-ease) * 2deg));
+    transform: translateY(calc(var(--hero-ease) * -2vh)) scale(calc(1 + var(--hero-ease) * 0.34)) rotate(calc(-2deg + var(--hero-ease) * 2deg));
   }
 
   .hero.scrolling .hero-stage::before {
-    transform: translateY(calc(-50% - var(--hero-ease) * 2vh)) scale(calc(1 + var(--hero-ease) * 0.42)) rotate(calc(-10deg + var(--hero-ease) * 7deg));
+    transform: translateY(calc(var(--hero-ease) * -2vh)) scale(calc(1 + var(--hero-ease) * 0.42)) rotate(calc(-10deg + var(--hero-ease) * 7deg));
   }
 
   .hero-content {
+    order: 1;
     width: 100%;
+    margin-bottom: 0;
+    padding-right: 0;
   }
 
   .hero .eyebrow {
     margin-bottom: 12px;
   }
 
-  h1 {
-    font-size: clamp(4.1rem, 18vw, 5.6rem);
+  .hero h1 {
+    font-size: clamp(3.5rem, 17vw, 5.3rem);
     margin-bottom: 18px;
   }
 
@@ -2556,15 +2633,18 @@ body.theme-dark .education-mark {
   }
 
   .signature-section {
-    min-height: 102svh;
+    min-height: 100svh;
+    margin-top: clamp(-220px, -24svh, -130px);
+    padding: 0;
   }
 
   .signature-stage {
-    min-height: 100svh;
+    min-height: 0;
+    padding: 0;
   }
 
   .jcs-signature {
-    width: min(92vw, 620px);
+    width: min(92vw, 620px, calc((100svh - 140px) * 1.5833));
     transform: none;
   }
 
@@ -2986,26 +3066,45 @@ body.theme-dark .education-mark {
   }
 }
 
-@media (max-width: 860px) and (max-height: 560px) {
+@media (max-width: 860px) and (max-height: 560px) and (orientation: landscape) {
   .hero-stage {
-    --hero-photo-size: min(38vw, 46svh);
-    --hero-photo-half-height: min(17.6vw, 21.3svh);
-    --hero-square-size: min(43vw, 50svh);
-    --hero-square-half: min(21.5vw, 25svh);
-    padding-top: 48px;
+    --hero-photo-width: min(38vw, 46svh);
+    --hero-square-width: min(43vw, 50svh);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.88fr);
+    align-items: center;
+    gap: 24px;
+    padding: 48px 24px 24px;
   }
 
   .hero-content {
-    width: 52%;
-    margin-left: 0;
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    margin-bottom: 0;
+    padding-right: 0;
   }
 
   .hero-stage::before {
+    top: 50%;
+    bottom: auto;
     right: 12px;
+    transform: translateY(-50%) scale(0.96) rotate(-10deg);
+    animation-name: heroSquareIn;
   }
 
   .hero-photo {
-    right: 24px;
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    right: auto;
+    top: auto;
+    width: var(--hero-photo-width);
+    margin-top: 0;
+    transform: translateY(0) scale(0.96) rotate(-2deg);
+    animation-name: heroPhotoInMobile;
   }
 
   .hero h1 {
@@ -3016,6 +3115,14 @@ body.theme-dark .education-mark {
     max-width: 100%;
     margin-top: 14px;
     font-size: 0.9rem;
+  }
+
+  .hero.scrolling .hero-photo {
+    transform: translateY(calc(var(--hero-ease) * -2vh)) scale(calc(1 + var(--hero-ease) * 0.28)) rotate(calc(-2deg + var(--hero-ease) * 2deg));
+  }
+
+  .hero.scrolling .hero-stage::before {
+    transform: translateY(calc(-50% - var(--hero-ease) * 2vh)) scale(calc(1 + var(--hero-ease) * 0.34)) rotate(calc(-10deg + var(--hero-ease) * 7deg));
   }
 }
 
